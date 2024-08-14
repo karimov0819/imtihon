@@ -1,5 +1,6 @@
-
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:imtihon/bir.dart';
 import 'package:lottie/lottie.dart';
 import 'package:carousel_slider/carousel_slider.dart';
@@ -20,16 +21,44 @@ class A extends StatefulWidget {
 
 class _AState extends State<A> {
   TextEditingController input = TextEditingController();
-
   String m = "";
+  String errorMessage = "";
 
-  void nomvid() {
-    setState(() {
-      m = input.text;
-    });
+  @override
+  void dispose() {
+    input.dispose();
+    super.dispose();
   }
 
-  List nomlist = [
+  Future<void> nomvid(BuildContext context) async {
+    if (input.text.isEmpty) {
+      setState(() {
+        errorMessage = "Please enter a value.";
+      });
+    } else {
+      await saveToFile(input.text);
+      String fileText = await readFromFile();
+      setState(() {
+        m = fileText;
+        errorMessage = "";
+        Navigator.pop(context); // Close dialog if input is valid
+      });
+    }
+  }
+
+  Future<void> saveToFile(String text) async {
+    final directory = await getApplicationDocumentsDirectory();
+    final file = File('${directory.path}/input_text.txt');
+    await file.writeAsString(text);
+  }
+
+  Future<String> readFromFile() async {
+    final directory = await getApplicationDocumentsDirectory();
+    final file = File('${directory.path}/input_text.txt');
+    return await file.readAsString();
+  }
+
+  List<String> nomlist = [
     "rizoxon/q1.png",
     "rizoxon/q2.png",
     "rizoxon/q3.png",
@@ -40,7 +69,7 @@ class _AState extends State<A> {
     "rizoxon/q7.png",
     "rizoxon/q8.png",
     "rizoxon/q9.png",
-     "rizoxon/q10.png",
+    "rizoxon/q10.png",
     "rizoxon/q11.png",
     "rizoxon/q12.png",
     "rizoxon/q13.png",
@@ -80,8 +109,8 @@ class _AState extends State<A> {
                         MaterialPageRoute(builder: (context) => bir()));
                   },
                   child: Container(
-                    width: 30,
-                    height: 30,
+                    width: 40,
+                    height: 40,
                     child: Image.asset(
                       "rizoxon/money.png",
                       fit: BoxFit.cover,
@@ -90,7 +119,10 @@ class _AState extends State<A> {
                 ),
                 ShaderMask(
                   shaderCallback: (bounds) => LinearGradient(
-                    colors: [Colors.red, Colors.blue],
+                    colors: [
+                    const Color.fromARGB(255, 33, 37, 243) ,
+                      Colors.green
+                    ],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ).createShader(bounds),
@@ -105,35 +137,60 @@ class _AState extends State<A> {
                 InkWell(
                   onTap: () {
                     showDialog(
-                        context: context,
-                        builder: (context) => AlertDialog(
-                              title: TextField(
-                                controller: input,
-                                keyboardType: TextInputType.number,
-                                maxLength: 2,
-                                onChanged: (value) {
-                                  print(value);
-                                },
-                                decoration: InputDecoration(
-                                  border: OutlineInputBorder(),
+                      context: context,
+                      builder: (context) => StatefulBuilder(
+                        builder: (context, setState) {
+                          return AlertDialog(
+                            title: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                TextField(
+                                  controller: input,
+                                  keyboardType: TextInputType.number,
+                                  maxLength: 2,
+                                  onChanged: (value) {
+                                    setState(() {
+                                      errorMessage =
+                                          ""; // Clear error message when typing
+                                    });
+                                  },
+                                  decoration: InputDecoration(
+                                    labelText: "enter your age",
+                                    border: OutlineInputBorder(),
+                                    errorText: errorMessage.isNotEmpty
+                                        ? errorMessage
+                                        : null,
+                                  ),
                                 ),
-                              ),
-                              actions: [
-                                ElevatedButton(
-                                    onPressed: () {
-                                      nomvid();
-                                      Navigator.pop(context);
-                                    },
-                                    child: Text("ok")),
-                                ElevatedButton(
-                                    onPressed: () {
-                                      Navigator.pop(context);
-                                    },
-                                    child: Text("back"))
                               ],
-                            ));
+                            ),
+                            actions: [
+                              ElevatedButton(
+                                onPressed: () {
+                                  // Call the validation function
+                                  nomvid(context);
+                                  setState(() {
+                                    // Trigger rebuild to show updated error message
+                                  });
+                                },
+                                child: Text("OK"),
+                              ),
+                              ElevatedButton(
+                                onPressed: () {
+                                  Navigator.pop(context); // Close dialog
+                                },
+                                child: Text("BACK"),
+                              ),
+                            ],
+                          );
+                        },
+                      ),
+                    );
                   },
                   child: Container(
+                    decoration: BoxDecoration(
+                        border: Border.all(width: 1, color: Colors.black),
+                        borderRadius: BorderRadius.all(Radius.circular(30))),
                     width: 40,
                     height: 40,
                     child: Lottie.asset("rizoxon/button.json"),
@@ -142,13 +199,13 @@ class _AState extends State<A> {
               ],
             ),
             SizedBox(
-              height: 20,
+              height: 30,
             ),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
+                Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -161,7 +218,9 @@ class _AState extends State<A> {
                           Text(
                             "$m",
                             style: TextStyle(
-                                fontSize: 30, fontWeight: FontWeight.bold),
+                              fontSize: 35,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                           Padding(
                             padding: const EdgeInsets.only(top: 10),
@@ -185,13 +244,14 @@ class _AState extends State<A> {
                       Row(
                         children: [
                           CircleAvatar(
-                              radius: 18,
-                              backgroundColor: Colors.red,
-                              child: Icon(
-                                Icons.heart_broken,
-                                color: Colors.white,
-                                size: 20,
-                              )),
+                            radius: 18,
+                            backgroundColor: Colors.red,
+                            child: Icon(
+                              Icons.heart_broken,
+                              color: Colors.white,
+                              size: 20,
+                            ),
+                          ),
                           SizedBox(
                             width: 5,
                           ),
@@ -207,26 +267,26 @@ class _AState extends State<A> {
                                   Text(
                                     "/100",
                                     style: TextStyle(
-                                        color: Colors.grey, fontSize: 10),
+                                        color: Colors.grey, fontSize: 13),
                                   ),
                                 ],
                               ),
                               Text(
                                 "Energy",
                                 style: TextStyle(color: Colors.grey),
-                              )
+                              ),
                             ],
                           ),
                         ],
                       ),
                       SizedBox(
-                        height: 10,
+                        height: 15,
                       ),
                       Row(
                         children: [
                           Container(
-                            width: 30,
-                            height: 30,
+                            width: 35,
+                            height: 35,
                             child: Image.asset(
                               "rizoxon/gg.png",
                               fit: BoxFit.cover,
@@ -242,7 +302,7 @@ class _AState extends State<A> {
                                 children: [
                                   Text("24"),
                                   SizedBox(
-                                    width: 3,
+                                    width: 5,
                                   ),
                                   Text(
                                     "/100",
@@ -254,20 +314,19 @@ class _AState extends State<A> {
                               Text(
                                 "Smart",
                                 style: TextStyle(color: Colors.grey),
-                              )
+                              ),
                             ],
                           ),
                         ],
                       ),
                       SizedBox(
-                        height: 10,
+                        height: 15,
                       ),
                       Row(
                         children: [
                           Container(
-                            width: 30,
-                            height: 30,
-                            color: Colors.amber,
+                            width: 35,
+                            height: 35,
                             child: Image.asset(
                               "rizoxon/hh.png",
                               fit: BoxFit.cover,
@@ -295,25 +354,48 @@ class _AState extends State<A> {
                               Text(
                                 "Smart",
                                 style: TextStyle(color: Colors.grey),
-                              )
+                              ),
                             ],
                           ),
                         ],
-                      )
+                      ),
                     ],
                   ),
                 ),
+                SizedBox(width: 10),
                 Container(
                   width: 150,
-                  height: 280,
-                  color: Colors.amber,
-                  child: Column(
+                  height: 320,
+                  child: Stack(
                     children: [
-                      Image.asset("rizoxon/jj.png"),
-                      Lottie.asset("rizoxon/circul1.json"),
+                      Positioned(
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        child: Container(
+                          height: 250, // Adjust height for the image
+                          child: Image.asset(
+                            "rizoxon/jj.png",
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        bottom: 0,
+                        left: 0,
+                        right: 0,
+                        child: Container(
+                          width: 150,
+                          height: 150,
+                          child: Lottie.asset(
+                            "rizoxon/circul1.json",
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                      ),
                     ],
                   ),
-                )
+                ),
               ],
             ),
             Text(
@@ -321,31 +403,36 @@ class _AState extends State<A> {
               style: TextStyle(color: Colors.grey),
             ),
             SizedBox(
-              height: 15,
+              height: 30,
             ),
-            CarouselSlider(
-              items: nomlist.map((e) {
-                return InkWell(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => DetailScreen(imagePath: e),
-                      ),
-                    );
-                  },
-                  child: Image.asset(e, fit: BoxFit.cover),
-                );
-              }).toList(),
-              options: CarouselOptions(
-                autoPlay: true,
-                autoPlayInterval: Duration(seconds: 2),
-                reverse: false,
-                autoPlayCurve: Curves.linear,
-                height: 200,
-                initialPage: 2,
-                enlargeCenterPage: true,
-                enlargeStrategy: CenterPageEnlargeStrategy.scale,
+            Expanded(
+              child: CarouselSlider(
+                items: nomlist.map((e) {
+                  return InkWell(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => DetailScreen(imagePath: e),
+                        ),
+                      );
+                    },
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(20),
+                      child: Image.asset(e, fit: BoxFit.cover),
+                    ),
+                  );
+                }).toList(),
+                options: CarouselOptions(
+                  autoPlay: true,
+                  autoPlayInterval: Duration(seconds: 2),
+                  reverse: false,
+                  autoPlayCurve: Curves.linear,
+                  height: 200,
+                  initialPage: 2,
+                  enlargeCenterPage: true,
+                  enlargeStrategy: CenterPageEnlargeStrategy.scale,
+                ),
               ),
             ),
           ],

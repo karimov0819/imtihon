@@ -13,21 +13,23 @@ class bir extends StatefulWidget {
 
 class _birState extends State<bir> {
   List date = [];
+
   void fetchgate() async {
-    final respons = await http
+    final response = await http
         .get(Uri.parse("https://cbu.uz/uz/arkhiv-kursov-valyut/json/"));
-    if (respons.statusCode == 200) {
-      final jsondate = json.decode(respons.body);
+    if (response.statusCode == 200) {
+      final jsondate = json.decode(response.body);
       for (var item in jsondate) {
         date.add(Map<String, dynamic>.from(item));
       }
       setState(() {});
-    } else {}
+    } else {
+      // Handle error if needed
+    }
   }
 
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
     fetchgate();
     update();
@@ -35,10 +37,11 @@ class _birState extends State<bir> {
 
   DateTime cur = DateTime.now();
   dynamic yozuv = "";
+
   void update() {
     setState(() {
       cur = DateTime.now();
-      yozuv = DateFormat("d-m-y").format(cur);
+      yozuv = DateFormat("d-M-y").format(cur);
     });
     Future.delayed(Duration(seconds: 1), update);
   }
@@ -51,85 +54,81 @@ class _birState extends State<bir> {
         title: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Container(child: Text("Valyuta kurslari",style: TextStyle(color: Colors.white),)),
-            Container(
-                child: Text(
-              yozuv,
-              style: TextStyle(color: Colors.white),
-            ))
+            Text("Valyuta kurslari", style: TextStyle(color: Colors.white)),
+            Text(yozuv, style: TextStyle(color: Colors.white)),
           ],
         ),
       ),
       body: ListView.builder(
-          itemCount: date.length,
-          itemBuilder: (context, index) {
-            return Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Container(
-                height: 150,
-               
-                child: Column(crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.only(top: 5, left: 10),
-                      child: Container(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text("updated day"),
-                            Text("${date[index]["Date"]}"),
-                          ],
-                        ),
-                      ),
-                    ),
-                    SizedBox(height: 15,),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+        itemCount: date.length,
+        itemBuilder: (context, index) {
+          // Get the "Diff" value and parse it to determine its color and formatting
+          final diff = date[index]["Diff"] as String;
+          final diffValue = double.tryParse(diff) ?? 0.0;
+          final diffColor = diffValue >= 0 ? Colors.green : Colors.red;
+          final formattedDiff = diffValue >= 0 ? "+$diff" : diff;
+
+          return Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Container(
+              height: 150,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(top: 5, left: 10),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Container(child: Text("1 ${date[index]["Ccy"]}")),
-                        Container(
-                          child: Column(
+                        Text("updated day"),
+                        Text("${date[index]["Date"]}"),
+                      ],
+                    ),
+                  ),
+                  SizedBox(height: 15),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      Text("1 ${date[index]["Ccy"]}"),
+                      Column(
+                        children: [
+                          Row(
                             children: [
-                              Row(
-                                children: [
-                                  Text(
-                                    "${date[index]["CcyNm_UZ"]}",
-                                    style: TextStyle(color: Colors.blue),
-                                  ),
-                                  SizedBox(
-                                    width: 3,
-                                  ),
-                                  Text(
-                                    "(${date[index]["Code"]})",
-                                    style: TextStyle(color: Colors.blue),
-                                  ),
-                                ],
-                              ),
                               Text(
-                                "${date[index]["Rate"]}",
-                                style: TextStyle(fontSize: 20),
+                                "${date[index]["CcyNm_UZ"]}",
+                                style: TextStyle(color: Colors.blue),
+                              ),
+                              SizedBox(width: 3),
+                              Text(
+                                "(${date[index]["Code"]})",
+                                style: TextStyle(color: Colors.blue),
                               ),
                             ],
                           ),
-                        ),
-                        Container(
-                          child: Text(
-                            "${date[index]["Diff"]}",
-                            style: TextStyle(color: Colors.red),
+                          Text(
+                            "${date[index]["Rate"]}",
+                            style: TextStyle(fontSize: 20),
                           ),
-                        )
-                      ],
-                    ),
-                    SizedBox(height: 22,),
-                    Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Container(width: double.infinity,height: 2,color: Colors.black,),
-                    )
-                  ],
-                ),
+                        ],
+                      ),
+                      Text(
+                        formattedDiff,
+                        style: TextStyle(color: diffColor),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 22),
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Container(
+                        width: double.infinity, height: 2, color: Colors.black),
+                  ),
+                ],
               ),
-            );
-          }),
+            ),
+          );
+        },
+      ),
     );
   }
 }
